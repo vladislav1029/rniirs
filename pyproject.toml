@@ -1,6 +1,9 @@
+[tool.poetry]
+package-mode = false
 [project]
 name = "rniirs"
 version = "0.1.0"
+
 description = ""
 authors = [
     {name = "vladislav1029",email = "vlad1090904@gmail.com"}

@@ -16,17 +16,13 @@ setup_logging()
 log = getLogger(__name__)
 
 
-@dp.message(Command("start"))
-async def cmd_start(message: types.Message):
-    await message.answer(f"Hello, {hbold(message.from_user.full_name)}!")
 
-
-@dp.message()
-async def echo(message: types.Message):
-    await message.answer(message.text)
 
 
 async def main():
+    from .routers import routers as rt
+    for router in rt:
+        dp.include_router(router)
     await dp.start_polling(bot)
 
 
