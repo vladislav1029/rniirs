@@ -1,24 +1,24 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
-from src.keyboard_users import (
-    get_user_main_kb,
-    get_user_help_kb,
-    get_themes_kb,
-    get_articles_kb,
-    get_article_url_kb,
-    get_notifications_kb
-)
+from src.keyboard_users import get_user_main_kb, get_user_help_kb  # Импорт клавиатур
+from src.link import check_admin_access  # Импорт проверки прав
 
 user_router = Router()
 
-# Стартовая команда с основной клавиатурой
 @user_router.message(Command("start"))
 async def cmd_start(message: Message):
-    await message.answer(
-        "👋 Добро пожаловать! Выберите действие:",
-        reply_markup=get_user_main_kb()
-    )
+    is_admin = await check_admin_access(message, silent=True)
+    
+    if is_admin:
+        from .admin_router import admin_start  # Ленивый импорт
+        await admin_start(message)
+    else:
+        await message.answer(
+            "👋 Добро пожаловать!",
+            reply_markup=get_user_main_kb()
+        )
+
 
 # Обработка кнопки "Помощь"
 @user_router.message(F.text == "ℹ Помощь")

@@ -1,6 +1,8 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
+from typing import Optional
+import logging
 from src.keyboard import (
     get_admin_main_kb,
     get_admin_articles_kb,
@@ -9,138 +11,98 @@ from src.keyboard import (
     get_admin_request_actions_kb
 )
 
-# ID админов (можно вынести в конфиг или БД)
-ADMIN_IDS = {123456789, 987654321}
+# Импортируем функцию проверки
+try:
+    from src.link import check_admin_access
+except ImportError:
+    logging.error("Failed to import check_admin_access from auth module")
+    raise
 
 admin_router = Router()
 
-# Проверка на админа
-async def is_admin(user_id: int) -> bool:
-    return user_id in ADMIN_IDS
+async def safe_extract_id(data: str, prefix: str) -> Optional[int]:
+    """Безопасное извлечение ID из callback данных"""
+    try:
+        return int(data.replace(prefix, ""))
+    except (ValueError, AttributeError) as e:
+        logging.error(f"Error extracting ID from {data}: {e}")
+        return None
 
-# Стартовая команда с проверкой админа
+async def handle_admin_errors(event: Message | CallbackQuery, 
+                           error_msg: str = "Произошла ошибка"):
+    """Обработка ошибок для админских действий"""
+    if isinstance(event, Message):
+        await event.answer("⚠️ " + error_msg)
+    elif isinstance(event, CallbackQuery):
+        await event.answer("⚠️ " + error_msg, show_alert=True)
+        await event.message.edit_reply_markup()  # Сбрасываем клавиатуру при ошибке
+
+# ========== Обработчики сообщений ==========
 @admin_router.message(Command("admin"))
 async def admin_start(message: Message):
-    if not await is_admin(message.from_user.id):
-        await message.answer("⛔ У вас нет прав доступа!")
-        return
-    
-    await message.answer(
-        "👑 Панель администратора:",
-        reply_markup=get_admin_main_kb()
-    )
+    try:
+        if not await check_admin_access(message):
+            return
+        
+        await message.answer(
+            "👑 Панель администратора:",
+            reply_markup=get_admin_main_kb()
+        )
+    except Exception as e:
+        logging.error(f"Error in admin_start: {e}")
+        await handle_admin_errors(message, "Ошибка доступа к панели")
 
-# Обработка кнопки "Посмотреть статьи"
 @admin_router.message(F.text == "📝 Посмотреть статьи")
 async def show_articles(message: Message):
-    if not await is_admin(message.from_user.id):
-        return
-    
-    # Здесь должна быть логика получения статей из БД
-    articles = [
-        {"id": 1, "title": "Статья 1"},
-        {"id": 2, "title": "Статья 2"}
-    ]
-    
-    await message.answer(
-        "📚 Список статей:",
-        reply_markup=get_admin_articles_kb(articles)
-    )
+    try:
+        if not await check_admin_access(message):
+            return
+        
+        articles = [
+            {"id": 1, "title": "Статья 1"},
+            {"id": 2, "title": "Статья 2"}
+        ]
+        
+        await message.answer(
+            "📚 Список статей:",
+            reply_markup=get_admin_articles_kb(articles)
+        )
+    except Exception as e:
+        logging.error(f"Error in show_articles: {e}")
+        await handle_admin_errors(message, "Ошибка загрузки статей")
 
-# Обработка кнопки "Редакция статьи"
-@admin_router.message(F.text == "✏ Редакция статьи")
-async def edit_article(message: Message):
-    if not await is_admin(message.from_user.id):
-        return
-    
-    await message.answer(
-        "Введите ID статьи для редактирования:",
-        reply_markup=get_admin_main_kb()
-    )
-
-# Обработка кнопки "Посмотреть заявки"
-@admin_router.message(F.text == "📋 Посмотреть заявки пользователей")
-async def show_requests(message: Message):
-    if not await is_admin(message.from_user.id):
-        return
-    
-    # Логика получения заявок из БД
-    requests = [
-        {"id": 1, "user_name": "User1", "type": "Регистрация"},
-        {"id": 2, "user_name": "User2", "type": "Поддержка"}
-    ]
-    
-    await message.answer(
-        "📨 Заявки пользователей:",
-        reply_markup=get_admin_requests_kb(requests)
-    )
-
-# Обработка инлайн-кнопок статей
+# ========== Обработчики callback-запросов ==========
 @admin_router.callback_query(F.data.startswith("admin_article_"))
 async def handle_article(callback: CallbackQuery):
-    if not await is_admin(callback.from_user.id):
-        return
-    
-    article_id = int(callback.data.split("_")[-1])
-    await callback.message.edit_text(
-        f"Управление статьёй ID: {article_id}",
-        reply_markup=get_admin_article_actions_kb(article_id)
-    )
-    await callback.answer()
+    try:
+        if not await check_admin_access(callback):
+            return
+        
+        article_id = await safe_extract_id(callback.data, "admin_article_")
+        if not article_id:
+            raise ValueError("Invalid article ID")
+        
+        await callback.message.edit_text(
+            f"Управление статьёй ID: {article_id}",
+            reply_markup=get_admin_article_actions_kb(article_id)
+        )
+        await callback.answer()
+    except Exception as e:
+        logging.error(f"Error in handle_article: {e}")
+        await handle_admin_errors(callback, "Ошибка обработки статьи")
 
-# Обработка действий со статьёй
-@admin_router.callback_query(F.data.startswith("admin_edit_"))
-async def edit_article_action(callback: CallbackQuery):
-    article_id = int(callback.data.split("_")[-1])
-    await callback.message.answer(f"Редактирование статьи ID: {article_id}")
-    await callback.answer()
-
-@admin_router.callback_query(F.data.startswith("admin_delete_"))
-async def delete_article_action(callback: CallbackQuery):
-    article_id = int(callback.data.split("_")[-1])
-    await callback.message.answer(f"Удаление статьи ID: {article_id}")
-    await callback.answer()
-
-# Обработка заявок
-@admin_router.callback_query(F.data.startswith("admin_request_"))
-async def handle_request(callback: CallbackQuery):
-    request_id = int(callback.data.split("_")[-1])
-    await callback.message.edit_text(
-        f"Заявка ID: {request_id}\nВыберите действие:",
-        reply_markup=get_admin_request_actions_kb(request_id)
-    )
-    await callback.answer()
-
-# Обработка действий с заявками
-@admin_router.callback_query(F.data.startswith("admin_approve_"))
-async def approve_request(callback: CallbackQuery):
-    request_id = int(callback.data.split("_")[-1])
-    await callback.message.answer(f"Заявка {request_id} одобрена!")
-    await callback.answer()
-
-@admin_router.callback_query(F.data.startswith("admin_reject_"))
-async def reject_request(callback: CallbackQuery):
-    request_id = int(callback.data.split("_")[-1])
-    await callback.message.answer(f"Заявка {request_id} отклонена!")
-    await callback.answer()
-
-# Навигационные кнопки
+# ========== Навигационные обработчики ==========
 @admin_router.callback_query(F.data == "admin_back_to_main")
 async def back_to_main(callback: CallbackQuery):
-    await callback.message.edit_text(
-        "👑 Панель администратора:",
-        reply_markup=get_admin_main_kb()
-    )
-    await callback.answer()
-
-@admin_router.callback_query(F.data == "admin_back_to_articles")
-async def back_to_articles(callback: CallbackQuery):
-    articles = [
-        {"id": 1, "title": "Статья 1"},
-        {"id": 2, "title": "Статья 2"}
-    ]
-    await callback.message.edit_text(
-        "📚 Список статей:",
-        reply_markup=get_admin_articles_kb(articles)
-    )
-    await callback.answer()
+    try:
+        if not await check_admin_access(callback):
+            return
+        
+        await callback.message.edit_text(
+            "👑 Панель администратора:",
+            reply_markup=get_admin_main_kb()
+        )
+        await callback.answer()
+    except Exception as e:
+        logging.error(f"Error in back_to_main: {e}")
+        await handle_admin_errors(callback, "Ошибка навигации")
