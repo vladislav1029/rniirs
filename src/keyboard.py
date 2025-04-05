@@ -3,89 +3,70 @@ from aiogram.types import (
     InlineKeyboardMarkup, InlineKeyboardButton
 )
 
-def get_user_main_kb():
-    """Основная клавиатура пользователя с кнопкой Start"""
+def get_admin_main_kb():
+    """Основная клавиатура админа"""
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="/start")],  # Стартовая кнопка сверху
-            [KeyboardButton(text="ℹ Помощь"), KeyboardButton(text="📦 Товары")],
-            [KeyboardButton(text="📞 Контакты")]
+            [KeyboardButton(text="📝 Посмотреть статьи")],
+            [KeyboardButton(text="✏ Редакция статьи")],
+            [KeyboardButton(text="📋 Посмотреть заявки пользователей")]
         ],
         resize_keyboard=True,
         one_time_keyboard=False
     )
 
-def get_user_help_kb():
-    """Клавиатура для раздела помощи"""
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="❓ Частые вопросы")],
-            [KeyboardButton(text="📞 Техподдержка")],
-            [KeyboardButton(text="🔙 Назад")]
-        ],
-        resize_keyboard=True
-    )
+def get_admin_articles_kb(articles: list):
+    """Инлайн-кнопки для статей (динамические)"""
+    buttons = []
+    for article in articles:
+        buttons.append([InlineKeyboardButton(
+            text=f"📄 {article['title']}",
+            callback_data=f"admin_article_{article['id']}"
+        )])
+    
+    buttons.append([InlineKeyboardButton(
+        text="🔙 Назад",
+        callback_data="admin_back_to_main"
+    )])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-def get_user_products_kb():
-    """Инлайн-кнопки для товаров"""
+def get_admin_article_actions_kb(article_id: int):
+    """Действия со статьёй"""
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="💻 Ноутбуки", callback_data="products_laptops")],
-            [InlineKeyboardButton(text="📱 Смартфоны", callback_data="products_phones")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="products_back")]
-        ]
-    )
-
-def get_user_start_kb():
-    """Клавиатура для пользователя с кнопкой Старт"""
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="/start")],  # Кнопка старта сверху
-            [KeyboardButton(text="Кнопка 1"), KeyboardButton(text="Кнопка 2")],
-            [KeyboardButton(text="Кнопка 3")]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=False  # Чтобы клавиатура не скрывалась
-    )
-# ===== REPLY-КЛАВИАТУРЫ =====
-def get_main_admin_kb():
-    """Основная клавиатура админа"""
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="Кнопка 1"), KeyboardButton(text="Кнопка 2")],
-            [KeyboardButton(text="Кнопка 3")]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-
-def get_location_kb():
-    """Клавиатура с запросом локации"""
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="Отправить локацию", request_location=True)]
-        ],
-        resize_keyboard=True
-    )
-
-# ===== INLINE-КЛАВИАТУРЫ =====
-def get_inline_kb():
-    """Инлайн-кнопки"""
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="Кнопка 1", callback_data="btn1")],
-            [InlineKeyboardButton(text="Кнопка 2", callback_data="btn2")],
             [
-                InlineKeyboardButton(text="Кнопка 3", callback_data="btn3"),
-                InlineKeyboardButton(text="Кнопка 4", callback_data="btn4")
-            ]
+                InlineKeyboardButton(text="✏ Редактировать", callback_data=f"admin_edit_{article_id}"),
+                InlineKeyboardButton(text="🗑 Удалить", callback_data=f"admin_delete_{article_id}")
+            ],
+            [InlineKeyboardButton(text="🔙 Назад к статьям", callback_data="admin_back_to_articles")]
         ]
     )
 
-def get_url_kb():
-    """Кнопка с URL"""
+def get_admin_requests_kb(requests: list):
+    """Кнопки для заявок пользователей"""
+    buttons = []
+    for req in requests:
+        buttons.append([InlineKeyboardButton(
+            text=f"📌 {req['user_name']} - {req['type']}",
+            callback_data=f"admin_request_{req['id']}"
+        )])
+    
+    buttons.append([InlineKeyboardButton(
+        text="🔙 Назад",
+        callback_data="admin_back_to_main"
+    )])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_admin_request_actions_kb(request_id: int):
+    """Действия с заявкой"""
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Открыть сайт", url="https://example.com")]
+            [
+                InlineKeyboardButton(text="✅ Одобрить", callback_data=f"admin_approve_{request_id}"),
+                InlineKeyboardButton(text="❌ Отклонить", callback_data=f"admin_reject_{request_id}")
+            ],
+            [InlineKeyboardButton(text="🔙 Назад к заявкам", callback_data="admin_back_to_requests")]
         ]
     )
