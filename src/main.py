@@ -1,8 +1,12 @@
 import asyncio
 from logging import getLogger
-from aiogram import Bot, Dispatcher,  types
+from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.utils.markdown import hbold
+
+
+from src.parser_rss import get_articles_from_feed
+from src.repository.db_helper import create_table
 from .log_conf import setup_logging
 from .config import settings
 
@@ -27,10 +31,11 @@ async def echo(message: types.Message):
 
 
 async def main():
+    log.info("Проект запускается")
+    await create_table()
     await dp.start_polling(bot)
+    log.warning("лонгпулл ушел погулять")
 
 
 if __name__ == "__main__":
-    log.info("Проект запускается")
     asyncio.run(main())
-    log.warning("лонгпулл ушел погулять")

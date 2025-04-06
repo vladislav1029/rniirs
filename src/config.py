@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Literal, Union
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import url
 
 BASE_DIR: Path = Path(__file__).parent.parent
 
@@ -21,7 +22,7 @@ class Config(BaseSettings):
     LOG_FORMAT: str = Field(
         default="%(levelname)-10s%(asctime)-25s %(name)s - %(funcName)-15s: %(lineno)-5d - %(message)3s"
     )
-
+    URL: str = Field(default=f"sqlite+aiosqlite:///{BASE_DIR}/test.db")
     # Общие настройки
 
 

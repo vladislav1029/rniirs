@@ -3,20 +3,8 @@ import feedparser
 from typing import List, Optional
 from dataclasses import dataclass
 
-
-# Сделал Паша сильно не ругать
-@dataclass(frozen=True)
-class Article:
-    """Контейнер для данных статьи"""
-
-    title: Optional[str]
-    link: Optional[str]
-    published: Optional[str]
-    summary: Optional[str]
-    author: Optional[str]
-    categories: Optional[str]
-    image: Optional[str]
-    guid: Optional[str]
+from src.dto.articls import ArticleCreateSchema
+from src.repository.model import Article
 
 
 async def fetch_rss_content(url: str) -> str:
@@ -33,7 +21,7 @@ async def fetch_rss_content(url: str) -> str:
         return ""
 
 
-def parse_articles(content: str, limit: Optional[int] = None) -> List[Article]:
+def parse_articles(content: str, limit: Optional[int] = None)-> list:
     """Разбор RSS-контента в список статей"""
     feed = feedparser.parse(content)
     if not hasattr(feed, "entries"):
@@ -58,18 +46,7 @@ def parse_articles(content: str, limit: Optional[int] = None) -> List[Article]:
             else:
                 categories = entry.get("category")
 
-            articles.append(
-                Article(
-                    title=entry.get("title"),
-                    link=entry.get("link"),
-                    published=entry.get("published") or entry.get("pubDate"),
-                    summary=entry.get("summary") or entry.get("description"),
-                    author=entry.get("author") or entry.get("creator"),
-                    categories=categories,
-                    image=image,
-                    guid=entry.get("guid"),
-                )
-            )
+            articles.append(ArticleCreateSchema(**entry))
         except Exception as e:
             print(f"Ошибка обработки статьи: {e}")
 
