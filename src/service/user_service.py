@@ -2,7 +2,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repository.user_repository import UserRepository
-from src.repository.models import User, RoleEnum
+from src.models import User, RoleEnum
 from src.schemas import UserCreate
 
 

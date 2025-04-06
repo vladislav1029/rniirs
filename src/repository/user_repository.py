@@ -1,7 +1,7 @@
 # repositories/user_repository.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.repository.models import User
+from src.models import User
 from src.schemas import UserCreate
 
 class UserRepository:
@@ -20,6 +20,7 @@ class UserRepository:
         return user
 
     async def get_user_by_id(self, user_id: int) -> User | None:
+
         return await self.session.get(User, user_id)
 
     async def get_all_users(self) -> list[User]:

@@ -2,7 +2,7 @@
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repository.catalog_repository import CatalogRepository
-from src.repository.models import Catalog
+from src.models import Catalog
 from schemas import CatalogCreate
 
 class CatalogService:

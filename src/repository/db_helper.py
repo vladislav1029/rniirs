@@ -5,12 +5,12 @@ from sqlalchemy.ext.asyncio import (
 
 
 from src.config import settings
-from src.repository.models import Base
+from src.models import Base
 
 
 async_engine = create_async_engine(url=settings.URL, echo=True)
 
-async_session = async_sessionmaker(async_engine)
+async_session = async_sessionmaker(async_engine, expire_on_commit=False)
 
 
 async def create_table():

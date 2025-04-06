@@ -1,66 +1,84 @@
-from aiogram.types import (
-    ReplyKeyboardMarkup, KeyboardButton,
-    InlineKeyboardMarkup, InlineKeyboardButton
-)
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+from src.models import Article
+
 
 def get_user_main_kb():
     """Основная клавиатура пользователя"""
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="📝 Подать заявку")],
-            [KeyboardButton(text="📚 Выбрать тематику"), KeyboardButton(text="🔕 Отключить уведомления")],
-            [KeyboardButton(text="📰 Посмотреть статьи"), KeyboardButton(text="ℹ Помощь")]
+            [
+                KeyboardButton(text="📚 Выбрать тематику"),
+                KeyboardButton(text="🔕 Отключить уведомления"),
+            ],
+            [
+                KeyboardButton(text="📰 Посмотреть статьи"),
+                KeyboardButton(text="ℹ Помощь"),
+            ],
         ],
         resize_keyboard=True,
-        one_time_keyboard=False
+        one_time_keyboard=False,
     )
 
-def get_user_help_kb():
-    """Клавиатура для раздела помощи"""
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="❓ Частые вопросы")],
-            [KeyboardButton(text="📞 Техподдержка")],
-            [KeyboardButton(text="🔙 Назад")]
-        ],
-        resize_keyboard=True
-    )
 
-def get_themes_kb():
-    """Инлайн-кнопки для выбора тематики"""
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="Технологии", callback_data="theme_tech")],
-            [InlineKeyboardButton(text="Наука", callback_data="theme_science")],
-            [InlineKeyboardButton(text="Искусство", callback_data="theme_art")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="theme_back")]
-        ]
-    )
+def get_privacy_selection_kb():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🔒 Приватный", callback_data="privacy_private")
+    builder.button(text="🌍 Публичный", callback_data="privacy_public")
+    return builder.as_markup()
 
-def get_articles_kb():
-    """Инлайн-кнопки для статей"""
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="Последние статьи", callback_data="articles_latest")],
-            [InlineKeyboardButton(text="Популярные статьи", callback_data="articles_popular")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="articles_back")]
-        ]
-    )
 
-def get_article_url_kb(url: str):
-    """Кнопка для перехода на сайт со статьёй"""
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🔗 Перейти на сайт", url=url)]
-        ]
-    )
+def get_catalog_actions_kb(catalog_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="✏️ Переименовать", callback_data=f"edit_catalog_{catalog_id}")
+    builder.button(text="❌ Удалить", callback_data=f"delete_catalog_{catalog_id}")
+    builder.button(text="🔙 К списку", callback_data="my_catalogs")
+    builder.adjust(1)
+    return builder.as_markup()
 
-def get_notifications_kb():
-    """Клавиатура для управления уведомлениями"""
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🔕 Отключить уведомления", callback_data="notifications_off")],
-            [InlineKeyboardButton(text="🔔 Включить уведомления", callback_data="notifications_on")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="notifications_back")]
-        ]
+
+def get_catalog_confirm_kb(catalog_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="✅ Да", callback_data=f"confirm_delete_{catalog_id}")
+    builder.button(text="❌ Нет", callback_data=f"view_catalog_{catalog_id}")
+    return builder.as_markup()
+
+
+def get_back_to_catalogs_kb(catalog_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🔙 Отмена", callback_data=f"view_catalog_{catalog_id}")
+    return builder.as_markup()
+
+
+def get_catalog_articles_kb(catalog_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="🗑️ Удалить статью", callback_data=f"delete_article_menu_{catalog_id}"
+    )   
+    builder.button(text="🔙 К каталогу", callback_data=f"view_catalog_{catalog_id}")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def get_public_catalog_kb(catalog_id: int):
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="⭐ Добавить в избранное", callback_data=f"fav_catalog_{catalog_id}"
     )
+    builder.button(text="🔍 Поиск других", callback_data="search_public")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def get_article_delete_kb(articles: list[Article]):
+    builder = InlineKeyboardBuilder()
+    for article in articles:
+        builder.button(
+            text=f"❌ {article.title[:15]}",
+            callback_data=f"delete_article_{article.id}",
+        )
+    builder.button(text="🔙 Назад", callback_data="my_catalogs")
+    builder.adjust(2)
+    return builder.as_markup()

@@ -1,7 +1,7 @@
 # schemas.py
 from pydantic import BaseModel
 from datetime import datetime
-from src.repository.models import RoleEnum, PrivateEnum
+from src.models import RoleEnum, PrivateEnum
 
 class UserCreate(BaseModel):
     id: int
