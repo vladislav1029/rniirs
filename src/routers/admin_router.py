@@ -10,13 +10,9 @@ from src.keyboard_admin import (
     get_admin_requests_kb,
     get_admin_request_actions_kb
 )
+from src.repository.db_helper import async_session
 
-# Импортируем функцию проверки
-try:
-    from src.link import check_admin_access
-except ImportError:
-    logging.error("Failed to import check_admin_access from auth module")
-    raise
+from src.service.user_service import UserService  # Импорт проверки прав
 
 admin_router = Router()
 
@@ -35,15 +31,27 @@ async def handle_admin_errors(event: Message | CallbackQuery,
         await event.answer("⚠️ " + error_msg)
     elif isinstance(event, CallbackQuery):
         await event.answer("⚠️ " + error_msg, show_alert=True)
-        await event.message.edit_reply_markup()  # Сбрасываем клавиатуру при ошибке
+        await event.message.edit_reply_markup()
+
+async def check_admin_access(event: Message | CallbackQuery) -> bool:
+    """Проверяет права администратора через UserService"""
+    try:
+        user_id = event.from_user.id
+        async with async_session() as session:
+            user_service = UserService(session)
+            return await user_service.is_admin(user_id)
+    except Exception as e:
+        logging.error(f"Admin check error: {e}")
+        return False
 
 # ========== Обработчики сообщений ==========
 @admin_router.message(Command("admin"))
 async def admin_start(message: Message):
+    if not await check_admin_access(message):
+        await handle_admin_errors(message, "Доступ запрещён")
+        return
+    
     try:
-        if not await check_admin_access(message):
-            return
-        
         await message.answer(
             "👑 Панель администратора:",
             reply_markup=get_admin_main_kb()
@@ -54,10 +62,11 @@ async def admin_start(message: Message):
 
 @admin_router.message(F.text == "📝 Посмотреть статьи")
 async def show_articles(message: Message):
+    if not await check_admin_access(message):
+        await handle_admin_errors(message, "Доступ запрещён")
+        return
+    
     try:
-        if not await check_admin_access(message):
-            return
-        
         articles = [
             {"id": 1, "title": "Статья 1"},
             {"id": 2, "title": "Статья 2"}
@@ -74,10 +83,11 @@ async def show_articles(message: Message):
 # ========== Обработчики callback-запросов ==========
 @admin_router.callback_query(F.data.startswith("admin_article_"))
 async def handle_article(callback: CallbackQuery):
+    if not await check_admin_access(callback):
+        await handle_admin_errors(callback, "Доступ запрещён")
+        return
+    
     try:
-        if not await check_admin_access(callback):
-            return
-        
         article_id = await safe_extract_id(callback.data, "admin_article_")
         if not article_id:
             raise ValueError("Invalid article ID")
@@ -94,10 +104,11 @@ async def handle_article(callback: CallbackQuery):
 # ========== Навигационные обработчики ==========
 @admin_router.callback_query(F.data == "admin_back_to_main")
 async def back_to_main(callback: CallbackQuery):
+    if not await check_admin_access(callback):
+        await handle_admin_errors(callback, "Доступ запрещён")
+        return
+    
     try:
-        if not await check_admin_access(callback):
-            return
-        
         await callback.message.edit_text(
             "👑 Панель администратора:",
             reply_markup=get_admin_main_kb()

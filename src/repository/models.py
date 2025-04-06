@@ -1,7 +1,7 @@
 # models.py
 import enum
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, func
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -26,7 +26,7 @@ class Catalog(Base):
     
     id = Column(Integer, primary_key=True)
     title = Column(String(255))
-    date = Column(DateTime, default=datetime.utcnow)
+    date = Column(DateTime(timezone=True), server_default=func.now())
     private = Column(Enum(PrivateEnum), default=PrivateEnum.PRIVATE)
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="catalogs")
@@ -39,6 +39,6 @@ class Article(Base):
     title = Column(String(255))
     description = Column(String)
     category = Column(String(100))
-    publication = Column(DateTime, default=datetime.utcnow)
+    publication = Column(DateTime(timezone=True), server_default=func.now())
     catalog_id = Column(Integer, ForeignKey("catalogs.id"))
     catalog = relationship("Catalog", back_populates="articles")
