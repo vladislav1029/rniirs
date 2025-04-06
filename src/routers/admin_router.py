@@ -3,7 +3,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from typing import Optional
 import logging
-from src.keyboard import (
+from src.keyboard_admin import (
     get_admin_main_kb,
     get_admin_articles_kb,
     get_admin_article_actions_kb,

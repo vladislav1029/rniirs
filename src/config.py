@@ -21,7 +21,7 @@ class Config(BaseSettings):
     LOG_FORMAT: str = Field(
         default="%(levelname)-10s%(asctime)-25s %(name)s - %(funcName)-15s: %(lineno)-5d - %(message)3s"
     )
-
+    URL: str = Field(default=f"sqlite+aiosqlite:///{BASE_DIR}/test.db")
     # Общие настройки
     ADMIN_IDS: List[Optional[int]]
 

@@ -3,6 +3,8 @@ from logging import getLogger
 from aiogram import Bot, Dispatcher,  types
 from aiogram.filters import Command
 from aiogram.utils.markdown import hbold
+
+from src.repository.db_helper import create_table
 from .log_conf import setup_logging
 from .config import settings
 
@@ -20,6 +22,7 @@ log = getLogger(__name__)
 
 
 async def main():
+    await create_table()
     from .routers import routers as rt
     for router in rt:
         dp.include_router(router)

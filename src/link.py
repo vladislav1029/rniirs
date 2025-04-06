@@ -1,5 +1,5 @@
 from aiogram.types import Message, CallbackQuery
-from typing import Union, Optional
+from typing import Union
 from src.config import settings
 
 
