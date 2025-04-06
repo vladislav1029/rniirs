@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal, Union
+from typing import List, Literal, Optional, Union
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,6 +23,7 @@ class Config(BaseSettings):
     )
 
     # Общие настройки
+    ADMIN_IDS: List[Optional[int]]
 
 
 # Пример использования
